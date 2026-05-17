@@ -1,4 +1,43 @@
 .env
 .env.local
+configs/.env
 .DS_Store
 *.log
+
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server
+
+# Go cache and test output
+*.test
+coverage.out
+
+# Vendor
+vendor/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+ehthumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Secrets and keys
+*.pem
+*.key
+
+# Misc
+.cache/
+node_modules/
+

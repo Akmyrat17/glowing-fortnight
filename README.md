@@ -1,140 +1,139 @@
 # Go Echo Boilerplate
 
-A Go web API boilerplate using Echo framework, PostgreSQL, and Redis.
+A production-ready Go web API boilerplate using Echo v4, PostgreSQL (pgx), Redis, Squirrel, Viper and Docker.
+
+This repository follows the project's canonical architecture and conventions outlined in [RULES.MD](RULES.MD).
 
 ## Prerequisites
 
 - Go 1.22 or later
-- Docker and Docker Compose (for containerized setup)
-- PostgreSQL and Redis (for local development)
+- Docker and Docker Compose (recommended for development and CI)
+- Make (optional but recommended)
 
-## Quick Start with Docker Compose
+## Quick Start (Docker Compose)
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd boilerplate
-   ```
+1. Clone the repository and change into it:
 
-2. Create a `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-   Update with your database password and other secrets.
+```bash
+git clone <repository-url> portfolio
+cd portfolio
+```
 
-3. Start the services:
-   ```bash
-   make up
-   ```
+2. Copy the example environment file and edit values:
 
-   This will:
-   - Build the Docker image
-   - Start PostgreSQL, Redis, and the App
-   - Automatically run all database migrations
-   - Start the server
+```bash
+cp .env.example .env
+# Edit .env to set DB password, JWT secret, and other secrets
+```
+
+3. Start the stack (builds images, starts DB + Redis, runs the app):
+
+```bash
+make up
+```
 
 4. Seed the database (optional):
-   ```bash
-   make seed
-   ```
 
-5. The API will be available at `http://localhost:8083`
+```bash
+make seed
+```
 
-6. Check health endpoint:
-   ```bash
-   curl http://localhost:8083/health
-   ```
+5. Check the API health endpoint:
 
-## Manual Docker Setup (without Docker Compose)
+```bash
+curl http://localhost:8083/health
+```
 
-If you prefer to run without Docker Compose:
+Default app port and other runtime settings come from `configs/config.yaml` and are overridden by `.env` and environment variables.
 
-1. Start PostgreSQL and Redis separately (e.g., using Docker or local installation)
+## Development (local without Docker)
 
-2. Build the Docker image:
-   ```bash
-   docker build -t go-echo-boilerplate .
-   ```
+1. Install Go modules:
 
-3. Create a root `.env` file based on `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
-   Update the database password, JWT secret, and any private keys.
+```bash
+go mod download
+```
 
-4. Run the container:
-   ```bash
-   docker run -p 8080:8080 -v $(pwd)/configs:/app/configs --env-file .env go-echo-boilerplate
-   ```
+2. Ensure PostgreSQL and Redis are running locally and update `configs/config.yaml` accordingly.
 
-## Local Development Setup
+3. Create the application database (name and user per `configs/config.yaml`).
 
-1. Install dependencies:
-   ```bash
-   go mod download
-   ```
+4. Apply migrations (via Docker container or DB client). Using the container:
 
-2. Set up PostgreSQL and Redis locally.
+```bash
+docker compose exec app ./server migrate up
+```
 
-3. Create database `boilerplate` in PostgreSQL.
+Or run SQL files from `platform/database/migrations/` in order.
 
-4. Update `configs/config.yaml` to use `localhost` for database and Redis hosts.
+5. Seed the database:
 
-5. Run migrations manually:
-   - Use your PostgreSQL client to run the `.up.sql` files in `migrations/` in order.
+```bash
+make seed
+```
 
-6. Seed the database:
-   ```bash
-   go run ./cmd/seed/main.go
-   ```
+6. Run the server locally for development:
 
-7. Run the application:
-   ```bash
-   go run ./cmd/api/main.go
-   ```
+```bash
+go run ./cmd/api/main.go
+```
 
-## Available Make Commands
+## Make Targets
 
-- `make up` - Start all services with Docker Compose (automatically runs migrations)
-- `make down` - Stop all services
-- `make logs` - View application logs
-- `make seed` - Run database seeding
-- `make build` - Build Docker image
-- `make test` - Run tests
-- `make migrate-up` - Apply pending migrations manually
-- `make migrate-down` - Rollback last migration manually
+- `make up` — Start services with Docker Compose
+- `make down` — Stop services
+- `make logs` — Tail app logs
+- `make seed` — Run database seeds
+- `make build` — Build Docker image
+- `make test` — Run unit tests
+- `make migrate-up` — Apply pending migrations (containerized)
+- `make migrate-down` — Roll back last migration (containerized)
 
 ## API Endpoints
 
-- `GET /health` - Health check
-- User management endpoints (see routes in `internal/modules/user/infra/http/`)
-- Permission management endpoints (see routes in `internal/modules/permission/infra/http/`)
+- `GET /health` — Health check
+- See module routes under `internal/modules/*/infra/http` for available endpoints (users, permissions, auth)
 
 ## Configuration
 
-Configuration is loaded from `configs/config.yaml` first. If a root `.env` file exists, it is merged on top of the YAML settings.
+Configuration is loaded from `configs/config.yaml` first. If a root `.env` file exists it is merged on top, and environment variables override both.
 
-Environment variables from the operating system also override YAML and `.env` values.
-
-For Docker, the compose stack can load `./.env` and pass those settings into the container.
-
-For local development, use `configs/config.yaml` for general settings and `.env` for secrets or runtime overrides.
+Sensitive configuration (passwords, secrets) should live only in `.env` or environment variables — `configs/.env` is gitignored.
 
 ## Database Migrations
 
-**Note**: Database migration commands are planned but not yet implemented. For now:
-
-1. Run the `.up.sql` files in `migrations/` manually in order.
-2. For rollbacks, run the corresponding `.down.sql` files.
+This project uses SQL migration files in `platform/database/migrations/`. Use the containerized migrate commands (via `make` or `docker compose exec`) to apply or roll back migrations.
 
 ## Project Structure
 
-See `RULES.MD` for detailed architecture and coding conventions.
+Follow the conventions in `RULES.MD`. Key folders:
 
-## What's Missing
+- `cmd/` — entry points (`api`, `seed`)
+- `internal/` — application code grouped by module
+- `pkg/` — reusable packages (logger, req_ctx)
+- `platform/` — infra: database, cache, migrations
 
-- Database migration commands (`migrate up`, `migrate down`, `migrate create`) - currently TODO
-- Environment variable loading from `.env` file (config currently loads from YAML)
-- Comprehensive tests
-- API documentation</content>
+## Finalization Checklist
+
+Before marking this repository ready for release, ensure:
+
+- `.env` has been created from `.env.example` locally and contains no secrets in source control
+- Database migrations have been applied to production and staging databases
+- Seeds have been run where appropriate
+- Tests pass: `make test` (or `go test ./...`)
+- CI is configured to run `make test` and build the Docker image
+
+## Contributing
+
+Follow `RULES.MD` for coding patterns and architecture. Use branch names per the Git Workflow section in that file.
+
+---
+
+If you'd like, I can also:
+
+- Run `go test ./...` and fix any failing tests
+- Add CI configuration (GitHub Actions) to run tests and build images
+- Prepare a release checklist and changelog
+
+Let me know which of those you'd like next.
 <parameter name="filePath">c:\Users\user\Documents\boilerplate\README.md
