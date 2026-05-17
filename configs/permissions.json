@@ -1,0 +1,67 @@
+{
+    "permissions": [
+        {
+            "module": "users",
+            "action": "get all users",
+            "name": "users.get_all",
+            "description": "List all users with pagination"
+        },
+        {
+            "module": "users",
+            "action": "get user by id",
+            "name": "users.get_one",
+            "description": "Fetch a single user by ID"
+        },
+        {
+            "module": "users",
+            "action": "create user",
+            "name": "users.create",
+            "description": "Create a new user"
+        },
+        {
+            "module": "users",
+            "action": "update user",
+            "name": "users.update",
+            "description": "Update user fields"
+        },
+        {
+            "module": "users",
+            "action": "delete user",
+            "name": "users.delete",
+            "description": "Delete a user permanently"
+        }
+    ],
+    "group_permissions": [
+        {
+            "name": "admin",
+            "permissions": [
+                "users.get_all",
+                "users.get_one",
+                "users.create",
+                "users.update",
+                "users.delete"
+            ]
+        },
+        {
+            "name": "moderator",
+            "permissions": [
+                "users.get_all",
+                "users.get_one"
+            ]
+        },
+        {
+            "name": "read_only",
+            "permissions": [
+                "users.get_all",
+                "users.get_one"
+            ]
+        }
+    ],
+    "admin_user": {
+        "name": "Admin",
+        "email": "admin@example.com",
+        "phone": "+1234567890",
+        "password": "admin123",
+        "group_permission": "admin"
+    }
+}

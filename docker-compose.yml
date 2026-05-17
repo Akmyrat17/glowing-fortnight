@@ -1,0 +1,54 @@
+services:
+  # app:
+  #   build: .
+  #   ports:
+  #     - "8083:8080"
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./configs:/app/configs
+  #   networks:
+  #     - boilerplate
+
+  db:
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${DATABASE_NAME:-boilerplate}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boilerplate
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6314:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boilerplate
+
+volumes:
+  pgdata:
+
+networks:
+  boilerplate:
+    driver: bridge
