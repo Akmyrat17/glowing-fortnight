@@ -2,8 +2,6 @@
 
 A production-ready Go web API boilerplate using Echo v4, PostgreSQL (pgx), Redis, Squirrel, Viper and Docker.
 
-This repository follows the project's canonical architecture and conventions outlined in [RULES.MD](RULES.MD).
-
 ## Prerequisites
 
 - Go 1.22 or later
