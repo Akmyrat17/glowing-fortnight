@@ -5,8 +5,8 @@
 include .env
 export
 
-DB_URL=postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@localhost:5432/$(DATABASE_NAME)?sslmode=disable
-DB_URL_DOCKER=postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@db:5432/$(DATABASE_NAME)?sslmode=disable
+DB_URL=postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=disable
+DB_URL_DOCKER=postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=disable
 
 # ─── Help ──────────────────────────────────────────────────────────────────────
 help:
@@ -71,11 +71,13 @@ local-test:
 	go test ./...
 
 local-migrate-up:
-	migrate -path ./migrations -database "$(DB_URL)" up
+	migrate -path $(CURDIR)/internal/platform/database/migrations -database "$(DB_URL)" up
 
 local-migrate-down:
-	migrate -path ./migrations -database "$(DB_URL)" down
-
+	migrate -path $(CURDIR)/internal/platform/database/migrations -database "$(DB_URL)" down
+	
+local-migrate-force:
+	migrate -path $(CURDIR)/internal/platform/database/migrations -database "$(DB_URL)" force $(version)
 local-migrate-create:
 	@read -p "Enter migration name: " name; \
 	migrate create -ext sql -dir ./migrations $$name

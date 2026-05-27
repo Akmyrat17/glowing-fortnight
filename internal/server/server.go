@@ -39,7 +39,7 @@ func New(cfg *config.Config, db *pgxpool.Pool, log logger.Logger) *echo.Echo {
 	permissionhttp.RegisterRoutes(apiV1, db, log)
 	profilehttp.RegisterRoutes(apiV1, db, log)
 	uploadhttp.RegisterRoutes(apiV1, log)
-
+	profilehttp.RegisterRoutes(apiV1, db, log)
 	return e
 }
 
