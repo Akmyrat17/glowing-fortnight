@@ -22,8 +22,6 @@ func New(cfg *config.Config, db *pgxpool.Pool, log logger.Logger) *echo.Echo {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
 	}))
-	// Serve uploaded files
-	e.Static("/uploads", "uploads")
 
 	registerRoutes(e, db, cfg, log)
 	return e

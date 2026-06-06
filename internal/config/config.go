@@ -21,6 +21,7 @@ type Config struct {
 	Middleware MiddlewareConfig `mapstructure:"middleware"`
 	Firebase   FirebaseConfig   `mapstructure:"firebase"`
 	JWT        JWTConfig        `mapstructure:"jwt"`
+	Cloudinary Cloudinary       `mapstructure:"cloudinary"`
 }
 
 type ServerConfig struct {
@@ -96,6 +97,11 @@ type JWTConfig struct {
 	RefreshTokenExpiration time.Duration `mapstructure:"refresh_token_expiration"`
 }
 
+type Cloudinary struct {
+	CloudName string `mapstructure:"cloud_name"`
+	ApiKey    string `mapstructure:"api_key"`
+	Secret    string `mapstructure:"secret"`
+}
 type Manager struct {
 	v         *viper.Viper
 	config    *Config

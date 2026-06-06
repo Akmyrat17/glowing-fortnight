@@ -27,7 +27,7 @@ func registerRoutes(e *echo.Echo, db *pgxpool.Pool, cfg *config.Config, log logg
 	userhttp.RegisterRoutes(api, db, log)
 	permissionhttp.RegisterRoutes(api, db, log)
 	profilehttp.RegisterRoutes(api, db, log)
-	uploadhttp.RegisterRoutes(api, log)
+	uploadhttp.RegisterRoutes(api, log, cfg.Cloudinary)
 	experiencehttp.RegisterRoutes(api, db, log)
 	educationhttp.RegisterRoutes(api, db, log)
 	skillhttp.RegisterRoutes(api, db, log)

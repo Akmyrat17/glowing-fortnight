@@ -13,7 +13,15 @@ require (
 	github.com/spf13/viper v1.17.0
 )
 
-require github.com/golang-jwt/jwt/v5 v5.0.0
+require (
+	github.com/cloudinary/cloudinary-go/v2 v2.16.0
+	github.com/golang-jwt/jwt/v5 v5.0.0
+)
+
+require (
+	github.com/creasty/defaults v1.7.0 // indirect
+	github.com/gorilla/schema v1.4.1 // indirect
+)
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

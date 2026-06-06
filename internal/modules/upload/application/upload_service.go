@@ -3,51 +3,49 @@ package application
 import (
 	"context"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/boilerplate/internal/config"
 	"github.com/boilerplate/internal/modules/upload/domain"
 	"github.com/boilerplate/internal/shared/app_errors"
 	"github.com/boilerplate/pkg/logger"
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
-const (
-	maxFileSize = 5 * 1024 * 1024 // 5MB
-	uploadsDir  = "uploads"
-)
+const maxFileSize = 5 * 1024 * 1024 // 5MB
 
 type UploadService struct {
-	uploadsDir string
-	log        logger.Logger
+	log logger.Logger
+	cld *cloudinary.Cloudinary
+	cfg config.Cloudinary
 }
 
-func NewUploadService(log logger.Logger) *UploadService {
-	return &UploadService{
-		uploadsDir: uploadsDir,
-		log:        log,
+func NewUploadService(log logger.Logger, cfg config.Cloudinary) *UploadService {
+	cld, err := cloudinary.NewFromParams(
+		cfg.CloudName,
+		cfg.ApiKey,
+		cfg.Secret,
+	)
+	if err != nil {
+		panic(fmt.Sprintf("failed to init cloudinary: %v", err))
 	}
+	return &UploadService{log: log, cld: cld}
 }
 
 func (s *UploadService) UploadImage(ctx context.Context, file *multipart.FileHeader, uploadType domain.UploadType) (string, error) {
-	// Validate upload type
 	if !uploadType.IsValid() {
 		s.log.Error("invalid upload type", "type", uploadType.String())
 		return "", app_errors.InvalidInput()
 	}
 
-	// Check file size
 	if file.Size > maxFileSize {
 		s.log.Warn("file too large", "size", file.Size, "max", maxFileSize)
 		return "", app_errors.ValidationError(fmt.Sprintf("file size exceeds %dMB limit", maxFileSize/1024/1024))
 	}
 
-	s.log.Info("starting file upload", "filename", file.Filename, "size", file.Size, "type", uploadType.String())
-
-	// Open file
 	src, err := file.Open()
 	if err != nil {
 		s.log.Error("failed to open file", "filename", file.Filename, "error", err)
@@ -58,81 +56,38 @@ func (s *UploadService) UploadImage(ctx context.Context, file *multipart.FileHea
 	// Validate mime type
 	mimeType, err := s.validateMimeType(src)
 	if err != nil {
-		s.log.Error("mime type validation failed", "filename", file.Filename, "error", err)
 		return "", err
 	}
-
-	s.log.Debug("mime type detected", "mime_type", mimeType)
-
-	// Get extension from mime type
-	ext := domain.ExtFromMimeType(mimeType)
-	if ext == "" {
-		s.log.Error("unsupported mime type", "mime_type", mimeType)
-		return "", app_errors.ValidationError("unsupported image format")
-	}
-
-	// Create upload directory if not exists
-	uploadPath := filepath.Join(s.uploadsDir, uploadType.String())
-	s.log.Debug("creating upload directory", "path", uploadPath)
-	if err := os.MkdirAll(uploadPath, 0755); err != nil {
-		s.log.Error("failed to create upload directory", "path", uploadPath, "error", err)
-		return "", app_errors.InternalError("failed to create upload directory").WithCause(err)
-	}
-
-	// Generate filename with timestamp
-	filename := fmt.Sprintf("%d.%s", time.Now().UnixMilli(), ext)
-	filePath := filepath.Join(uploadPath, filename)
-
-	s.log.Debug("creating destination file", "path", filePath)
-	// Create destination file
-	dst, err := os.Create(filePath)
-	if err != nil {
-		s.log.Error("failed to create file", "path", filePath, "error", err)
-		return "", app_errors.InternalError("failed to create file").WithCause(err)
-	}
-	defer dst.Close()
-
-	// Copy file
-	s.log.Debug("copying file content")
-	if _, err := io.Copy(dst, src); err != nil {
-		os.Remove(filePath) // Clean up on error
-		s.log.Error("failed to save file", "path", filePath, "error", err)
-		return "", app_errors.InternalError("failed to save file").WithCause(err)
-	}
-
-	// Return relative path
-	relativePath := filepath.Join(uploadType.String(), filename)
-	relativePath = filepath.ToSlash(relativePath) // Use forward slashes for consistency
-	s.log.Info("file uploaded successfully", "path", relativePath)
-	return relativePath, nil
-}
-
-func (s *UploadService) validateMimeType(file multipart.File) (string, error) {
-	// Read first 512 bytes to detect mime type
-	header := make([]byte, 512)
-	n, err := file.Read(header)
-	if err != nil && err != io.EOF {
-		s.log.Error("failed to read file header", "error", err)
-		return "", app_errors.InvalidInput().WithCause(err)
-	}
-
-	// Reset file pointer
-	file.Seek(0, 0)
-
-	// Detect mime type
-	mimeType := detectMimeType(header[:n])
-
-	// Validate it's an image
 	if !strings.HasPrefix(mimeType, "image/") {
-		s.log.Warn("file is not an image", "mime_type", mimeType)
 		return "", app_errors.ValidationError("file must be an image")
 	}
 
-	return mimeType, nil
+	// Upload to Cloudinary
+	publicID := fmt.Sprintf("%s/%d", uploadType.String(), time.Now().UnixMilli())
+	resp, err := s.cld.Upload.Upload(ctx, src, uploader.UploadParams{
+		PublicID: publicID,
+		Folder:   "portfolio/" + uploadType.String(),
+	})
+	if err != nil {
+		s.log.Error("cloudinary upload failed", "error", err)
+		return "", app_errors.InternalError("failed to upload file").WithCause(err)
+	}
+
+	s.log.Info("file uploaded to cloudinary", "url", resp.SecureURL)
+	return resp.SecureURL, nil
+}
+
+func (s *UploadService) validateMimeType(file multipart.File) (string, error) {
+	header := make([]byte, 512)
+	n, err := file.Read(header)
+	if err != nil {
+		return "", app_errors.InvalidInput().WithCause(err)
+	}
+	file.Seek(0, 0)
+	return detectMimeType(header[:n]), nil
 }
 
 func detectMimeType(data []byte) string {
-	// Simple mime type detection based on magic numbers
 	if len(data) >= 4 {
 		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
 			return "image/jpeg"
