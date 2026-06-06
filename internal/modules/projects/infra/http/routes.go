@@ -15,9 +15,15 @@ func RegisterRoutes(e *echo.Group, db *pgxpool.Pool, log logger.Logger) {
 	projectHandler := NewProjectHandler(projectService)
 
 	group := e.Group("/projects")
+	group.GET("", projectHandler.ListProjects)
+	group.GET("/:id/skills", projectHandler.ListSkills)
 	group.Use(middleware.Auth(), middleware.IsAdmin())
+	group.POST("", projectHandler.CreateProject)
 	group.GET("/:id", projectHandler.GetProject)
 	group.PATCH("/:id", projectHandler.UpdateProject)
 	group.DELETE("/:id", projectHandler.DeleteProject)
-	group.GET("", projectHandler.ListProjects)
+
+	// skill
+	group.POST("/:id/skills", projectHandler.AddSkill)
+	group.DELETE("/:id/skills", projectHandler.RemoveSkill)
 }

@@ -1,20 +1,20 @@
 services:
-  # app:
-  #   build: .
-  #   ports:
-  #     - "8083:8080"
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./configs:/app/configs
-  #   networks:
-  #     - boilerplate
+  app:
+    build: .
+    ports:
+      - "8083:8080"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./configs:/app/configs
+    networks:
+      - boilerplate
 
   db:
     image: postgres:15
@@ -31,20 +31,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    pull_policy: missing
     networks:
       - boilerplate
 
-  redis:
-    image: redis:latest
-    ports:
-      - "6314:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - boilerplate
+  # redis:
+  #   image: redis:latest
+  #   ports:
+  #     - "6314:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   pull_policy: missing
+  #   networks:
+  #     - boilerplate
 
 volumes:
   pgdata:

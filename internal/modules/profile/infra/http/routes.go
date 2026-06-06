@@ -15,10 +15,10 @@ func RegisterRoutes(e *echo.Group, db *pgxpool.Pool, log logger.Logger) {
 	profileService := application.NewProfileService(profileRepo)
 	handler := NewProfileHandler(profileService)
 	group := e.Group("/profiles")
+	group.GET("", handler.ListProfiles)
 	group.Use(middleware.Auth(), middleware.IsAdmin())
 	group.POST("", handler.CreateProfile)
 	group.GET("/:id", handler.GetProfile)
 	group.PATCH("/:id", handler.UpdateProfile)
 	group.DELETE("/:id", handler.DeleteProfile)
-	group.GET("", handler.ListProfiles)
 }

@@ -14,6 +14,9 @@ type ProjectRepository interface {
 	FindAll(ctx context.Context, limit, offset int, filters []query.Filter, sorts []query.SortField) ([]*domain.Project, int64, error)
 	Update(ctx context.Context, project *dao.ProjectDAO) error
 	Delete(ctx context.Context, id domain.ProjectID) error
+	AddSkills(ctx context.Context, projectID domain.ProjectID, skillIDs []domain.SkillID) error
+	RemoveSkills(ctx context.Context, projectID domain.ProjectID, skillIDs []domain.SkillID) error
+	FindSkills(ctx context.Context, projectID domain.ProjectID) ([]*domain.Skill, error)
 }
 
 type ProjectService struct {
@@ -42,4 +45,16 @@ func (s *ProjectService) Update(ctx context.Context, project *domain.Project) er
 
 func (s *ProjectService) Delete(ctx context.Context, id domain.ProjectID) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *ProjectService) AddSkills(ctx context.Context, projectID domain.ProjectID, skillIDs []domain.SkillID) error {
+	return s.repo.AddSkills(ctx, projectID, skillIDs)
+}
+
+func (s *ProjectService) RemoveSkills(ctx context.Context, projectID domain.ProjectID, skillIDs []domain.SkillID) error {
+	return s.repo.RemoveSkills(ctx, projectID, skillIDs)
+}
+
+func (s *ProjectService) GetSkills(ctx context.Context, projectID domain.ProjectID) ([]*domain.Skill, error) {
+	return s.repo.FindSkills(ctx, projectID)
 }

@@ -36,6 +36,7 @@ type Project struct {
 	ProjectType ProjectType
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	Skills      []Skill
 }
 
 func ParseToUUIDProjectID(s string) (ProjectID, error) {
@@ -75,6 +76,7 @@ func NewProject(name string, url, description, repoUrl *string, startDate, endDa
 		ID:          ProjectID(uuid.New()),
 		Name:        name,
 		Description: description,
+		Url:         url,
 		RepoUrl:     repoUrl,
 		StartDate:   startDate,
 		EndDate:     endDate,

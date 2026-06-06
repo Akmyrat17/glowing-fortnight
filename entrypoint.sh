@@ -2,16 +2,16 @@
 set -e
 
 # Wait for database to be ready
-until nc -z db 5432; do
-  echo "Waiting for database to be ready..."
-  sleep 1
+echo "Waiting for database to be ready..."
+until pg_isready -d "$DATABASE_URL" -q; do
+  sleep 2
 done
 
 echo "Database is ready!"
 
 # Run migrations
 echo "Running database migrations..."
-migrate -path /app/migrations -database "postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:5432/${DATABASE_NAME}?sslmode=disable" up
+migrate -path /app/migrations -database "$DATABASE_URL" up
 
 echo "Migrations completed successfully!"
 

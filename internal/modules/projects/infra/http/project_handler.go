@@ -6,6 +6,7 @@ import (
 	"github.com/boilerplate/internal/domain"
 	"github.com/boilerplate/internal/modules/projects/application"
 	"github.com/boilerplate/internal/modules/projects/infra/http/dto"
+	skillDto "github.com/boilerplate/internal/modules/skill/infra/http/dto"
 	"github.com/boilerplate/internal/shared/response"
 	"github.com/boilerplate/pkg/query"
 	reqctx "github.com/boilerplate/pkg/req_ctx"
@@ -106,4 +107,64 @@ func (h *ProjectHandler) ListProjects(c echo.Context) error {
 	}
 
 	return response.Paginated(c, dto.ProjectResFromDomainList(projects), pagination.Page, pagination.PerPage, total)
+}
+
+func (h *ProjectHandler) AddSkill(c echo.Context) error {
+	projectID, err := domain.ParseToUUIDProjectID(c.Param("id"))
+	if err != nil {
+		return err
+	}
+
+	var req dto.ProjectSkillsReq
+	if err := reqctx.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+
+	skillIDs := make([]domain.SkillID, len(req.SkillIDs))
+	for i, id := range req.SkillIDs {
+		skillIDs[i] = domain.SkillID(id)
+	}
+
+	if err := h.projectService.AddSkills(c.Request().Context(), projectID, skillIDs); err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *ProjectHandler) RemoveSkill(c echo.Context) error {
+	projectID, err := domain.ParseToUUIDProjectID(c.Param("id"))
+	if err != nil {
+		return err
+	}
+
+	var req dto.ProjectSkillsReq
+	if err := reqctx.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+
+	skillIDs := make([]domain.SkillID, len(req.SkillIDs))
+	for i, id := range req.SkillIDs {
+		skillIDs[i] = domain.SkillID(id)
+	}
+
+	if err := h.projectService.RemoveSkills(c.Request().Context(), projectID, skillIDs); err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *ProjectHandler) ListSkills(c echo.Context) error {
+	projectID, err := domain.ParseToUUIDProjectID(c.Param("id"))
+	if err != nil {
+		return err
+	}
+
+	skills, err := h.projectService.GetSkills(c.Request().Context(), projectID)
+	if err != nil {
+		return err
+	}
+
+	return response.OK(c, skillDto.SkillResFromDomainList(skills))
 }

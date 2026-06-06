@@ -137,3 +137,7 @@ func ProjectResFromDomainList(projects []*domain.Project) []*ProjectRes {
 	}
 	return res
 }
+
+type ProjectSkillsReq struct {
+	SkillIDs []uuid.UUID `json:"skill_ids" validate:"required,min=1,dive,required"`
+}

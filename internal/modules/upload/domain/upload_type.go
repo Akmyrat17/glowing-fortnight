@@ -6,10 +6,12 @@ type UploadType string
 
 const (
 	ProfileImage UploadType = "profile"
+	SkillIcon    UploadType = "skill"
 )
 
 var validUploadTypes = map[UploadType]bool{
 	ProfileImage: true,
+	SkillIcon:    true,
 }
 
 func (t UploadType) IsValid() bool {
